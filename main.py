@@ -24,7 +24,7 @@ def keep_alive():
 # 2. የቦቱ ዋና ቅንብር
 # =====================================================================
 API_TOKEN = '8709684996:AAEJOSnQZehV6T9ED2lP6HXeKVY5QJ9C-OQ'
-MY_TELEGRAM_ID = 'ያንተን_ID_እዚህ_አስገባ' # 👈 የራስህን የቴሌግራም ID እዚህ ማስገባትህን እንዳትረሳ!
+MY_TELEGRAM_ID = '6566373242' # 👈 የራስህን የቴሌግራም ID እዚህ ማስገባትህን እንዳትረሳ!
 bot = telebot.TeleBot(API_TOKEN)
 
 bot.delete_webhook()
