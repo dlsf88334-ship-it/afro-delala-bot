@@ -4,9 +4,9 @@ from flask import Flask
 import telebot
 from telebot import types
 
-# ==========================================
-# 1. RENDER እንዳይዘጋ የሚያደርግ የ FLASK ሰርቨር
-# ==========================================
+# =====================================================================
+# 1. RENDER እንዳይዘጋ የሚያደርግ የ FLASK ሰርቨር (PORT BINDING)
+# =====================================================================
 app = Flask('')
 
 @app.route('/')
@@ -14,6 +14,7 @@ def home():
     return "Bot is running!"
 
 def run_flask():
+    # Render የሚሰጠንን ፖርት ያነባል፣ ከሌለ 8080 ይጠቀማል
     port = int(os.environ.get("PORT", 8080))
     app.run(host='0.0.0.0', port=port)
 
@@ -21,10 +22,10 @@ def keep_alive():
     t = Thread(target=run_flask)
     t.start()
 
-# ==========================================
+# =====================================================================
 # 2. የቦቱ ዋና ቅንብር (CONFIGURATION)
-# ==========================================
-API_TOKEN = '8709684996:AAEJOSnQZehV6T9ED2lP6HXeKVY5QJ9C-OQ' # ⚠️ እዚህ ላይ ያንተን ሙሉ ቶከን አስገባ
+# =====================================================================
+API_TOKEN = '8709684996:AAEJOSnQZehV6T9ED2lP6HXeKVY5QJ9C-OQ'
 bot = telebot.TeleBot(API_TOKEN)
 
 # የቀደመውን የዌብሁክ ስብስብ ለማጽዳት
@@ -33,9 +34,11 @@ bot.delete_webhook()
 # የተጠቃሚዎችን መረጃ ጊዜያዊ ማከማቻ (Session)
 user_sessions = {}
 
-# ==========================================
-# 3. አዲሱ የ START ትእዛዝ
-# ==========================================
+# =====================================================================
+# 3. የቦቱ ትእዛዞች እና ፍሰቶች (COMMANDS & FLOWS)
+# =====================================================================
+
+# --- አዲሱ የ START ትእዛዝ (አጭር ሰላምታ) ---
 @bot.message_handler(commands=['start'])
 def send_welcome(message):
     chat_id = message.chat.id
@@ -50,45 +53,9 @@ def send_welcome(message):
     
     bot.send_message(chat_id, welcome_text, reply_markup=markup)
 
-# --------------------------------------------------------
-# ⚠️ ከዚህ በታች ያሉት ያንተ የነበሩት የቀደሙት ኮዶች (ከመስመር 15 ጀምሮ) እንዳሉ ይቀጥላሉ...
-# --------------------------------------------------------
-
-
-def keep_alive():
-    t = Thread(target=run_flask)
-    t.start()
-
-API_TOKEN = '8709684996:AAEJOSnQZehV6T9ED2lP6HXeKVY5QJ9C-OQ'
-bot = telebot.TeleBot(API_TOKEN)
-
-# የድሮውን ዌብሁክ ለማጥፋት ይህንን ይጨምሩ
-bot.delete_webhook()
-
-# የተጠቃሚዎችን መረጃ ጊዜያዊ ማከማቻ
-user_sessions = {}
-
-# --- START COMMAND ---
-@bot.message_handler(commands=['start'])
-def send_welcome(message):
-    chat_id = message.chat.id
-    user_sessions[chat_id] = {} # ሰsession መክፈት
-    
-    welcome_text = (
-        "📢 ማስታወሻ\n\n"
-        "እንኳን ወደ Afro Delala Bot በደህና መጡ!\n\n"
-        "- በ Afro Delala ድረ-ገጽ ላይ ያስገቡት መረጃ እንዲታተም እና እንዲለቀቅ 20 ብር የአገልግሎት ክፍያ ያስፈልጋል።\n"
-        "- እባኮትን የሚጠየቁትን መረጃ በስነስርአት ለማስገባት ይሞክሩ። የተጠየቁት መረጃ እና መልሶ ካልተመሳሰለ የማተሙ ሂደት ውድቅ ይሆናል።\n\n"
-        "እባክዎ ይህን መረጃ በጥንቃቄ ካነበቡ በኋላ \"ቀጥል\" የሚለውን ቁልፍ ይጫኑ ወይም \"ቀጥል\" ብለው ይላኩ።"
-    )
-    
-    markup = types.ReplyKeyboardMarkup(row_width=1, resize_keyboard=True)
-    markup.add(types.KeyboardButton('ቀጥል'))
-    bot.send_message(chat_id, welcome_text, reply_markup=markup)
-
-# --- ቀጥል ሲል ---
-@bot.message_handler(func=lambda message: message.text == "ቀጥል")
-def choose_category(message):
+# --- መግዛት ወይም መሸጥ ሲመርጥ ወደ ካቴጎሪ መመሪያ ---
+@bot.message_handler(func=lambda message: message.text in ['🛒 መግዛት', '💰 መሸጥ'])
+def handle_buy_sell(message):
     chat_id = message.chat.id
     markup = types.ReplyKeyboardMarkup(row_width=2, resize_keyboard=True)
     markup.add(
@@ -112,11 +79,11 @@ def handle_category(message):
         msg = bot.send_message(chat_id, "እባኮትን የቤቱ 3 የተለያየ ፎቶ አንድ ላይ ወይም በየተራ ይላኩ (ሲጨርሱ ፎቶዎቹ በራሳቸው ይመዘገባሉ)", reply_markup=remove_keyboard)
         bot.register_next_step_handler(msg, get_house_photos)
     elif category == '🚗 መኪና':
-        msg = bot.send_message(chat_id, "እባኮትን የመኪናውን ስም ያስገቡ", reply_markup=remove_keyboard)
-        bot.register_next_step_handler(msg, get_car_name)
+        # ማስታወሻ፡ የመኪና ተግባር ገና አልተጻፈም
+        bot.send_message(chat_id, "የመኪና መመዝገቢያ ክፍል በቅርቡ ይለቀቃል!", reply_markup=remove_keyboard)
     elif category == '📦 ሌሎች ነገሮች':
-        msg = bot.send_message(chat_id, "እባኮትን የእቃውን ስም ያስገቡ", reply_markup=remove_keyboard)
-        bot.register_next_step_handler(msg, get_thing_name)
+        # ማስታወሻ፡ የሌሎች ነገሮች ተግባር ገና አልተጻፈም
+        bot.send_message(chat_id, "የሌሎች እቃዎች መመዝገቢያ ክፍል በቅርቡ ይለቀቃል!", reply_markup=remove_keyboard)
 
 # ==================== 🏠 የቤት ፍሰት (HOUSE FLOW) ====================
 def get_house_photos(message):
@@ -173,7 +140,6 @@ def finish_house_reg(message):
     user_sessions[chat_id]['phone'] = message.text
     user_sessions[chat_id]['username'] = message.from_user.username if message.from_user.username else "የለውም"
     
-    # አንተ በፈለግኸው ስታይል ፅሁፉን ማቀናጀት
     data = user_sessions[chat_id]
     summary_text = (
         f"🏠 ቤት\n\n"
@@ -191,17 +157,13 @@ def finish_house_reg(message):
     for p_id in data['photos'][1:]:
         media.append(types.InputMediaPhoto(p_id))
         
-    # ማስታወሻ፡ እዚህ ጋር ወደ ራስህ አካውንት ወይም ግሩፕ እንዲልክ ማድረግ ትችላለህ (ለምሳሌ ለጊዜው ለራሱ ለተጠቃሚው ይላከው)
     bot.send_media_group(chat_id, media)
-    
     bot.send_message(chat_id, "መረጃዎት ተጣርቶ ከ Afro delala መስሪያ ቤት መልእክት ይደርሶታል\nእናመሰግናለን")
 
 # =====================================================================
-# ማስታወሻ፡ የ🚗 መኪና እና የ📦 ሌሎች ነገሮች ፍሰትም ልክ እንደዚሁ በተመሳሳይ መልክ ይቀጥላል።
-
-bot.infinity_polling()
-# ... ያንተ የቀደመው ኮድ እዚህ ያበቃል ...
-
-keep_alive()  # ይህ አዲስ የሚጨመረው ነው
-print("ቦቱ መስራት ጀምሯል...")
-bot.infinity_polling() # ያንተ የነበረው መጨረሻ መስመር
+# 4. ቦቱን ማነሳሻ መጨረሻ መስመሮች (START BOT)
+# =====================================================================
+if __name__ == "__main__":
+    keep_alive()  # Render እንዳይዘጋ ሰርቨሩን በጀርባ ያስነሳል
+    print("ቦቱ መስራት ጀምሯል...")
+    bot.infinity_polling()  # ቦቱ በቋሚነት እንዲሰራ ያደርጋል
