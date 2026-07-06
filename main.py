@@ -34,7 +34,7 @@ user_sessions = {}
 # 3. የቦቱ ትእዛዞች እና ፍሰቶች (COMMANDS & FLOWS)
 # =====================================================================
 
-# --- 1ኛ ደረጃ፦ የ START ትእዛዝ (መግዛት ወይም መሸጥ ምርጫ ብቻ መጀመሪያ ይመጣል) ---
+# --- 1ኛ ደረጃ፦ የ START ትእዛዝ (መግዛት ወይም መሸጥ ምርጫ መጀመሪያ ይመጣል) ---
 @bot.message_handler(commands=['start'])
 def send_welcome(message):
     chat_id = message.chat.id
@@ -49,17 +49,42 @@ def send_welcome(message):
     
     bot.send_message(chat_id, welcome_text, reply_markup=markup)
 
-# --- 2ኛ ደረጃ፦ ከሁለቱ አንዱን ሲመርጥ የካቴጎሪ ምርጫዎች ይመጣሉ ---
+# --- 2ኛ ደረጃ፦ ምርጫዎችን ማስተናገጃ (🛒 መግዛት ወይም 💰 መሸጥ) ---
 @bot.message_handler(func=lambda message: message.text in ['🛒 መግዛት', '💰 መሸጥ'])
 def handle_buy_sell(message):
     chat_id = message.chat.id
-    markup = types.ReplyKeyboardMarkup(row_width=2, resize_keyboard=True)
-    markup.add(
-        types.KeyboardButton('🏠 ቤት'),
-        types.KeyboardButton('🚗 መኪና'),
-        types.KeyboardButton('📦 ሌሎች ነገሮች')
-    )
-    bot.send_message(chat_id, "📋 እንዲታተም የፈለጉት ነገር ምንድን ነው?\nእባክዎ ከታች ካሉት አማራጮች አንዱን ይምረጡ።", reply_markup=markup)
+    
+    if message.text == '🛒 መግዛት':
+        # 🔗 ለተጠቃሚው የቴሌግራም ቻናል እና የዌብሳይት ሊንክ የሚሰጥበት ማሳያ (ባዶ ቦታዎች)
+        buy_text = (
+            "🛒 እቃዎችን ወይም ቤቶችን ለመግዛት የሚከተሉትን አማራጮች ይጠቀሙ፦\n\n"
+            "🌐 የዌብሳይታችን ሊንክ፦\n"
+            "እዚህ ላይ የዌብሳይትህን ሊንክ አስገባ\n\n"
+            "📢 የቴሌግራም ቻናላችን፦\n"
+            "እዚህ ላይ የቴሌግራም ቻናልህን ሊንክ አስገባ"
+        )
+        
+        # ተጠቃሚው ወደ ኋላ መመለስ ከፈለገ የሚጠቀምበት ቁልፍ
+        back_markup = types.ReplyKeyboardMarkup(row_width=1, resize_keyboard=True)
+        back_markup.add(types.KeyboardButton('↩️ ወደ ዋና ማውጫ ተመለስ'))
+        
+        bot.send_message(chat_id, buy_text, reply_markup=back_markup)
+        
+    elif message.text == '💰 መሸጥ':
+        # መሸጥ ሲል ብቻ የካቴጎሪ ምርጫዎች ይመጣሉ
+        markup = types.ReplyKeyboardMarkup(row_width=2, resize_keyboard=True)
+        markup.add(
+            types.KeyboardButton('🏠 ቤት'),
+            types.KeyboardButton('🚗 መኪና'),
+            types.KeyboardButton('📦 ሌሎች ነገሮች'),
+            types.KeyboardButton('↩️ ወደ ዋና ማውጫ ተመለስ')
+        )
+        bot.send_message(chat_id, "📋 እንዲታተም የፈለጉት ነገር ምንድን ነው?\nእባክዎ ከታች ካሉት አማራጮች አንዱን ይምረጡ።", reply_markup=markup)
+
+# --- ወደ ዋና ማውጫ ለመመለስ ሲጫን ---
+@bot.message_handler(func=lambda message: message.text == '↩️ ወደ ዋና ማውጫ ተመለስ')
+def go_back_to_main(message):
+    send_welcome(message)
 
 # --- 3ኛ ደረጃ፦ ካቴጎሪ ሲመረጥ ወደ መረጃ ማስገቢያ መውሰጃ ---
 @bot.message_handler(func=lambda message: message.text in ['🏠 ቤት', '🚗 መኪና', '📦 ሌሎች ነገሮች'])
