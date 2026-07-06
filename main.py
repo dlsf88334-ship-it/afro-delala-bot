@@ -1,9 +1,12 @@
-import telebot
-from telebot import types
 import os
 from threading import Thread
 from flask import Flask
+import telebot
+from telebot import types
 
+# ==========================================
+# 1. RENDER እንዳይዘጋ የሚያደርግ የ FLASK ሰርቨር
+# ==========================================
 app = Flask('')
 
 @app.route('/')
@@ -13,6 +16,44 @@ def home():
 def run_flask():
     port = int(os.environ.get("PORT", 8080))
     app.run(host='0.0.0.0', port=port)
+
+def keep_alive():
+    t = Thread(target=run_flask)
+    t.start()
+
+# ==========================================
+# 2. የቦቱ ዋና ቅንብር (CONFIGURATION)
+# ==========================================
+API_TOKEN = '8709684996:AAEJOSn...' # ⚠️ እዚህ ላይ ያንተን ሙሉ ቶከን አስገባ
+bot = telebot.TeleBot(API_TOKEN)
+
+# የቀደመውን የዌብሁክ ስብስብ ለማጽዳት
+bot.delete_webhook()
+
+# የተጠቃሚዎችን መረጃ ጊዜያዊ ማከማቻ (Session)
+user_sessions = {}
+
+# ==========================================
+# 3. አዲሱ የ START ትእዛዝ
+# ==========================================
+@bot.message_handler(commands=['start'])
+def send_welcome(message):
+    chat_id = message.chat.id
+    user_sessions[chat_id] = {} # ሰsession መክፈት
+    
+    welcome_text = "መጀመሪያ እንኳን በሰላም መጡ! በዚህ ቦት ላይ ምን ማድረግ ነው የፈለጉት?"
+    
+    markup = types.ReplyKeyboardMarkup(row_width=2, resize_keyboard=True)
+    btn_buy = types.KeyboardButton('🛒 መግዛት')
+    btn_sell = types.KeyboardButton('💰 መሸጥ')
+    markup.add(btn_buy, btn_sell)
+    
+    bot.send_message(chat_id, welcome_text, reply_markup=markup)
+
+# --------------------------------------------------------
+# ⚠️ ከዚህ በታች ያሉት ያንተ የነበሩት የቀደሙት ኮዶች (ከመስመር 15 ጀምሮ) እንዳሉ ይቀጥላሉ...
+# --------------------------------------------------------
+
 
 def keep_alive():
     t = Thread(target=run_flask)
