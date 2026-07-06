@@ -24,7 +24,7 @@ def keep_alive():
 # ==========================================
 # 2. የቦቱ ዋና ቅንብር (CONFIGURATION)
 # ==========================================
-API_TOKEN = '8709684996:AAEJOSn...' # ⚠️ እዚህ ላይ ያንተን ሙሉ ቶከን አስገባ
+API_TOKEN = '8709684996:AAEJOSnQZehV6T9ED2lP6HXeKVY5QJ9C-OQ' # ⚠️ እዚህ ላይ ያንተን ሙሉ ቶከን አስገባ
 bot = telebot.TeleBot(API_TOKEN)
 
 # የቀደመውን የዌብሁክ ስብስብ ለማጽዳት
