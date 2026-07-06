@@ -159,3 +159,8 @@ def finish_house_reg(message):
 # ማስታወሻ፡ የ🚗 መኪና እና የ📦 ሌሎች ነገሮች ፍሰትም ልክ እንደዚሁ በተመሳሳይ መልክ ይቀጥላል።
 
 bot.infinity_polling()
+# ... ያንተ የቀደመው ኮድ እዚህ ያበቃል ...
+
+keep_alive()  # ይህ አዲስ የሚጨመረው ነው
+print("ቦቱ መስራት ጀምሯል...")
+bot.infinity_polling() # ያንተ የነበረው መጨረሻ መስመር
