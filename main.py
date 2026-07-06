@@ -34,7 +34,7 @@ user_sessions = {}
 # 3. የቦቱ ትእዛዞች እና ፍሰቶች (COMMANDS & FLOWS)
 # =====================================================================
 
-# --- 1ኛ ደረጃ፦ የ START ትእዛዝ (መግዛት ወይም መሸጥ ምርጫ መጀመሪያ ይመጣል) ---
+# --- 1ኛ ደረጃ፦ የ START ትእዛዝ ---
 @bot.message_handler(commands=['start'])
 def send_welcome(message):
     chat_id = message.chat.id
@@ -50,12 +50,15 @@ def send_welcome(message):
     bot.send_message(chat_id, welcome_text, reply_markup=markup)
 
 # --- 2ኛ ደረጃ፦ ምርጫዎችን ማስተናገጃ (🛒 መግዛት ወይም 💰 መሸጥ) ---
-@bot.message_handler(func=lambda message: message.text in ['🛒 መግዛት', '💰 መሸጥ'])
+@bot.message_handler(func=lambda message: message.text in ['🛒 መግዛት', '💰 መሸጥ', '↩️ ወደ ዋና ማውጫ ተመለስ'])
 def handle_buy_sell(message):
     chat_id = message.chat.id
     
+    if message.text == '↩️ ወደ ዋና ማውጫ ተመለስ':
+        send_welcome(message)
+        return
+
     if message.text == '🛒 መግዛት':
-        # 🔗 ለተጠቃሚው የቴሌግራም ቻናል እና የዌብሳይት ሊንክ የሚሰጥበት ማሳያ (ባዶ ቦታዎች)
         buy_text = (
             "🛒 እቃዎችን ወይም ቤቶችን ለመግዛት የሚከተሉትን አማራጮች ይጠቀሙ፦\n\n"
             "🌐 የዌብሳይታችን ሊንክ፦\n"
@@ -63,28 +66,18 @@ def handle_buy_sell(message):
             "📢 የቴሌግራም ቻናላችን፦\n"
             "እዚህ ላይ የቴሌግራም ቻናልህን ሊንክ አስገባ"
         )
-        
-        # ተጠቃሚው ወደ ኋላ መመለስ ከፈለገ የሚጠቀምበት ቁልፍ
         back_markup = types.ReplyKeyboardMarkup(row_width=1, resize_keyboard=True)
         back_markup.add(types.KeyboardButton('↩️ ወደ ዋና ማውጫ ተመለስ'))
-        
         bot.send_message(chat_id, buy_text, reply_markup=back_markup)
         
     elif message.text == '💰 መሸጥ':
-        # መሸጥ ሲል ብቻ የካቴጎሪ ምርጫዎች ይመጣሉ
         markup = types.ReplyKeyboardMarkup(row_width=2, resize_keyboard=True)
         markup.add(
             types.KeyboardButton('🏠 ቤት'),
             types.KeyboardButton('🚗 መኪና'),
-            types.KeyboardButton('📦 ሌሎች ነገሮች'),
-            types.KeyboardButton('↩️ ወደ ዋና ማውጫ ተመለስ')
+            types.KeyboardButton('📦 ሌሎች ነገሮች')
         )
         bot.send_message(chat_id, "📋 እንዲታተም የፈለጉት ነገር ምንድን ነው?\nእባክዎ ከታች ካሉት አማራጮች አንዱን ይምረጡ።", reply_markup=markup)
-
-# --- ወደ ዋና ማውጫ ለመመለስ ሲጫን ---
-@bot.message_handler(func=lambda message: message.text == '↩️ ወደ ዋና ማውጫ ተመለስ')
-def go_back_to_main(message):
-    send_welcome(message)
 
 # --- 3ኛ ደረጃ፦ ካቴጎሪ ሲመረጥ ወደ መረጃ ማስገቢያ መውሰጃ ---
 @bot.message_handler(func=lambda message: message.text in ['🏠 ቤት', '🚗 መኪና', '📦 ሌሎች ነገሮች'])
@@ -99,7 +92,8 @@ def handle_category(message):
         msg = bot.send_message(chat_id, "እባኮትን የቤቱ 3 የተለያየ ፎቶ አንድ ላይ ወይም በየተራ ይላኩ (ሲጨርሱ ፎቶዎቹ በራሳቸው ይመዘገባሉ)", reply_markup=remove_keyboard)
         bot.register_next_step_handler(msg, get_house_photos)
     elif category == '🚗 መኪና':
-        bot.send_message(chat_id, "የመኪና መመዝገቢያ ክፍል በቅርቡ ይለቀቃል!", reply_markup=remove_keyboard)
+        msg = bot.send_message(chat_id, "እባኮትን የመኪናውን 3 የተለያየ ፎቶ አንድ ላይ ወይም በየተራ ይላኩ (ሲጨርሱ ፎቶዎቹ በራሳቸው ይመዘገባሉ)", reply_markup=remove_keyboard)
+        bot.register_next_step_handler(msg, get_car_photos)
     elif category == '📦 ሌሎች ነገሮች':
         bot.send_message(chat_id, "የሌሎች እቃዎች መመዝገቢያ ክፍል በቅርቡ ይለቀቃል!", reply_markup=remove_keyboard)
 
@@ -173,7 +167,89 @@ def finish_house_reg(message):
         media.append(types.InputMediaPhoto(p_id))
         
     bot.send_media_group(chat_id, media)
-    bot.send_message(chat_id, "መረጃዎት ተጣርቶ ከ Afro delala መስሪያ ቤት መልእክት ይደርሶታል\nእናመሰግናለን")
+    
+    # መልእክቱ ከተላከ በኋላ ብቻ ወደ ዋና ማውጫ መመለሻ ቁልፍ እዚህ ይመጣል
+    back_markup = types.ReplyKeyboardMarkup(row_width=1, resize_keyboard=True)
+    back_markup.add(types.KeyboardButton('↩️ ወደ ዋና ማውጫ ተመለስ'))
+    
+    bot.send_message(chat_id, "መረጃዎት ተጣርቶ ከ Afro delala መስሪያ ቤት መልእክት ይደርሶታል\nእናመሰግናለን", reply_markup=back_markup)
+
+# ==================== 🚗 የመኪና ፍሰት (CAR FLOW) ====================
+def get_car_photos(message):
+    chat_id = message.chat.id
+    if message.content_type == 'photo':
+        photo_id = message.photo[-1].file_id
+        user_sessions[chat_id]['photos'].append(photo_id)
+        
+        if len(user_sessions[chat_id]['photos']) < 3:
+            msg = bot.send_message(chat_id, f"በጣም ጥሩ! የቀሩ ፎቶዎች፡ {3 - len(user_sessions[chat_id]['photos'])}። እባክዎ ይላኩ...")
+            bot.register_next_step_handler(msg, get_car_photos)
+            return
+        
+        msg = bot.send_message(chat_id, "በጣም ጥሩ👌\nአሁን ደግሞ የመኪናውን ስም ያስገቡ (ምሳሌ፦ Toyota)")
+        bot.register_next_step_handler(msg, get_car_name)
+    else:
+        msg = bot.send_message(chat_id, "እባክዎ ፎቶ ይላኩ!")
+        bot.register_next_step_handler(msg, get_car_photos)
+
+def get_car_name(message):
+    chat_id = message.chat.id
+    user_sessions[chat_id]['car_name'] = message.text
+    msg = bot.send_message(chat_id, "በጣም ጥሩ👌\nአሁን ደግሞ የመኪናውን ሞዴል/ዓመተ ምህረት ያስገቡ")
+    bot.register_next_step_handler(msg, get_car_model)
+
+def get_car_model(message):
+    chat_id = message.chat.id
+    user_sessions[chat_id]['model'] = message.text
+    msg = bot.send_message(chat_id, "በጣም ጥሩ👌\nአሁን ደግሞ የሚሸጡበትን የገንዘብ መጠን ያስገቡ")
+    bot.register_next_step_handler(msg, get_car_price)
+
+def get_car_price(message):
+    chat_id = message.chat.id
+    user_sessions[chat_id]['price'] = message.text
+    msg = bot.send_message(chat_id, "በጣም ጥሩ👌\nአሁን ደግሞ መኪናው የሚገኝበትን ከተማ/ሀገር ያስገቡ")
+    bot.register_next_step_handler(msg, get_car_country)
+
+def get_car_country(message):
+    chat_id = message.chat.id
+    user_sessions[chat_id]['country'] = message.text
+    msg = bot.send_message(chat_id, "በጣም ጥሩ👌\nአሁን ደግሞ መኪናው የሚገኝበትን የሰፈር ስም ያስገቡ")
+    bot.register_next_step_handler(msg, get_car_neighborhood)
+
+def get_car_neighborhood(message):
+    chat_id = message.chat.id
+    user_sessions[chat_id]['neighborhood'] = message.text
+    msg = bot.send_message(chat_id, "በስተመጨረሻ\nየእርሶን ስልክ ቁጥር ያስገቡ")
+    bot.register_next_step_handler(msg, finish_car_reg)
+
+def finish_car_reg(message):
+    chat_id = message.chat.id
+    user_sessions[chat_id]['phone'] = message.text
+    user_sessions[chat_id]['username'] = message.from_user.username if message.from_user.username else "የለውም"
+    
+    data = user_sessions[chat_id]
+    summary_text = (
+        f"🚗 መኪና\n\n"
+        f"የመኪና ስም :- {data['car_name']}\n"
+        f"ሞዴል :- {data['model']}\n"
+        f"የገንዘብ መጠን :- {data['price']}\n"
+        f"ሀገር :- {data['country']}\n"
+        f"ሰፈር :- {data['neighborhood']}\n"
+        f"ስልክ ቁጥር :- {data['phone']}\n"
+        f"from @{data['username']} username\n"
+    )
+    
+    media = [types.InputMediaPhoto(data['photos'][0], caption=summary_text)]
+    for p_id in data['photos'][1:]:
+        media.append(types.InputMediaPhoto(p_id))
+        
+    bot.send_media_group(chat_id, media)
+    
+    # ማረጋገጫው ከተነገረ በኋላ መመለሻው ቁልፍ እዚህም ይመጣል
+    back_markup = types.ReplyKeyboardMarkup(row_width=1, resize_keyboard=True)
+    back_markup.add(types.KeyboardButton('↩️ ወደ ዋና ማውጫ ተመለስ'))
+    
+    bot.send_message(chat_id, "መረጃዎት ተጣርቶ ከ Afro delala መስሪያ ቤት መልእክት ይደርሶታል\nእናመሰግናለን", reply_markup=back_markup)
 
 # =====================================================================
 # 4. ቦቱን ማነሳሻ መጨረሻ መስመሮች (START BOT)
