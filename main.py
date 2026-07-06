@@ -14,7 +14,6 @@ def home():
     return "Bot is running!"
 
 def run_flask():
-    # Render የሚሰጠንን ፖርት ያነባል፣ ከሌለ 8080 ይጠቀማል
     port = int(os.environ.get("PORT", 8080))
     app.run(host='0.0.0.0', port=port)
 
@@ -28,17 +27,14 @@ def keep_alive():
 API_TOKEN = '8709684996:AAEJOSnQZehV6T9ED2lP6HXeKVY5QJ9C-OQ'
 bot = telebot.TeleBot(API_TOKEN)
 
-# የቀደመውን የዌብሁክ ስብስብ ለማጽዳት
 bot.delete_webhook()
-
-# የተጠቃሚዎችን መረጃ ጊዜያዊ ማከማቻ (Session)
 user_sessions = {}
 
 # =====================================================================
 # 3. የቦቱ ትእዛዞች እና ፍሰቶች (COMMANDS & FLOWS)
 # =====================================================================
 
-# --- አዲሱ የ START ትእዛዝ (አጭር ሰላምታ) ---
+# --- 1ኛ ደረጃ፦ የ START ትእዛዝ (መግዛት ወይም መሸጥ ምርጫ ብቻ መጀመሪያ ይመጣል) ---
 @bot.message_handler(commands=['start'])
 def send_welcome(message):
     chat_id = message.chat.id
@@ -53,7 +49,7 @@ def send_welcome(message):
     
     bot.send_message(chat_id, welcome_text, reply_markup=markup)
 
-# --- መግዛት ወይም መሸጥ ሲመርጥ ወደ ካቴጎሪ መመሪያ ---
+# --- 2ኛ ደረጃ፦ ከሁለቱ አንዱን ሲመርጥ የካቴጎሪ ምርጫዎች ይመጣሉ ---
 @bot.message_handler(func=lambda message: message.text in ['🛒 መግዛት', '💰 መሸጥ'])
 def handle_buy_sell(message):
     chat_id = message.chat.id
@@ -65,35 +61,30 @@ def handle_buy_sell(message):
     )
     bot.send_message(chat_id, "📋 እንዲታተም የፈለጉት ነገር ምንድን ነው?\nእባክዎ ከታች ካሉት አማራጮች አንዱን ይምረጡ።", reply_markup=markup)
 
-# --- ካቴጎሪ መረጣ ---
+# --- 3ኛ ደረጃ፦ ካቴጎሪ ሲመረጥ ወደ መረጃ ማስገቢያ መውሰጃ ---
 @bot.message_handler(func=lambda message: message.text in ['🏠 ቤት', '🚗 መኪና', '📦 ሌሎች ነገሮች'])
 def handle_category(message):
     chat_id = message.chat.id
     category = message.text
     user_sessions[chat_id] = {'category': category, 'photos': []} # ዳታ ማደራጃ
     
-    # የቁልፍ ሰሌዳውን ማጥፊያ
     remove_keyboard = types.ReplyKeyboardRemove()
     
     if category == '🏠 ቤት':
         msg = bot.send_message(chat_id, "እባኮትን የቤቱ 3 የተለያየ ፎቶ አንድ ላይ ወይም በየተራ ይላኩ (ሲጨርሱ ፎቶዎቹ በራሳቸው ይመዘገባሉ)", reply_markup=remove_keyboard)
         bot.register_next_step_handler(msg, get_house_photos)
     elif category == '🚗 መኪና':
-        # ማስታወሻ፡ የመኪና ተግባር ገና አልተጻፈም
         bot.send_message(chat_id, "የመኪና መመዝገቢያ ክፍል በቅርቡ ይለቀቃል!", reply_markup=remove_keyboard)
     elif category == '📦 ሌሎች ነገሮች':
-        # ማስታወሻ፡ የሌሎች ነገሮች ተግባር ገና አልተጻፈም
         bot.send_message(chat_id, "የሌሎች እቃዎች መመዝገቢያ ክፍል በቅርቡ ይለቀቃል!", reply_markup=remove_keyboard)
 
 # ==================== 🏠 የቤት ፍሰት (HOUSE FLOW) ====================
 def get_house_photos(message):
     chat_id = message.chat.id
     if message.content_type == 'photo':
-        # የፎቶውን ID መያዝ
         photo_id = message.photo[-1].file_id
         user_sessions[chat_id]['photos'].append(photo_id)
         
-        # 3 ፎቶ እስኪሞላ መጠበቅ
         if len(user_sessions[chat_id]['photos']) < 3:
             msg = bot.send_message(chat_id, f"በጣም ጥሩ! የቀሩ ፎቶዎች፡ {3 - len(user_sessions[chat_id]['photos'])}። እባክዎ ይላኩ...")
             bot.register_next_step_handler(msg, get_house_photos)
@@ -152,7 +143,6 @@ def finish_house_reg(message):
         f"from @{data['username']} username\n"
     )
     
-    # ፎቶዎቹን በአንድ ላይ (Media Group) አድርጎ መላክ
     media = [types.InputMediaPhoto(data['photos'][0], caption=summary_text)]
     for p_id in data['photos'][1:]:
         media.append(types.InputMediaPhoto(p_id))
@@ -164,6 +154,6 @@ def finish_house_reg(message):
 # 4. ቦቱን ማነሳሻ መጨረሻ መስመሮች (START BOT)
 # =====================================================================
 if __name__ == "__main__":
-    keep_alive()  # Render እንዳይዘጋ ሰርቨሩን በጀርባ ያስነሳል
+    keep_alive()
     print("ቦቱ መስራት ጀምሯል...")
-    bot.infinity_polling()  # ቦቱ በቋሚነት እንዲሰራ ያደርጋል
+    bot.infinity_polling()
